@@ -19,6 +19,7 @@ Module.register('MMM-RNV',{
 		lang: config.language,
 
 		initialLoadDelay: 0, // 0 seconds delay
+		departuresCount: 10,
 		retryDelay: 2500,
 		apiBase: 'https://rnv.tafmobile.de/easygo2/rest',
 		requestURL: '/regions/rnv/modules/stationmonitor/element',
@@ -93,7 +94,7 @@ Module.register('MMM-RNV',{
 		row.appendChild(destinationHeader);		
 		table.appendChild(row);
 		
-		for (var i in this.departures) {
+		for (var i = 0; i < this.departures.length && i < this.config.departuresCount; i++) {
 			var currentDeparture = this.departures[i];
 			var row = document.createElement("tr");
 			table.appendChild(row);
