@@ -20,8 +20,7 @@ Module.register('MMM-RNV',{
 
 		initialLoadDelay: 0, // 0 seconds delay
 		retryDelay: 2500,
-
-		apiBase: 'http://rnv.the-agent-factory.de:8080/easygo2/api',		
+		apiBase: 'https://rnv.tafmobile.de/easygo2/rest',
 		requestURL: '/regions/rnv/modules/stationmonitor/element',
 		stationID: '',
 		
@@ -174,7 +173,7 @@ Module.register('MMM-RNV',{
 			}
 			else if (notification === "DATA") {
 				this.loaded = true;
-				this.processDepartures(JSON.parse(payload));
+				this.processDepartures(payload);
 				this.updateDom();
     		}
 	} 	

@@ -21,16 +21,19 @@ module.exports = NodeHelper.create({
 	getData: function() {
 		var self = this;
 		
-		var currentDate = moment().format('YYYY-MM-DD+hh:mm:ss');
-		var myUrl = this.config.apiBase + this.config.requestURL + '?hafasID=' + this.config.stationID + '&time=' + currentDate;
+		var currentDate = moment().format('D.MM.YYYY  H:m:s');
+		var thisTime = new Date().getTime();
+		var myUrl = this.config.apiBase + this.config.requestURL + '?hafasID=' + this.config.stationID + '&time=' + encodeURIComponent(currentDate) + '&transportFilter=alle' + '&jQuery=1' + '&callback=giveMyData';
 				
 		request({
 			url: myUrl,
-			method: 'GET',
-			headers: { 'RNV_API_TOKEN': this.config.apiKey }
+			method: 'GET'
 		}, function (error, response, body) {
-			
 			if (!error && response.statusCode == 200) {
+				function giveMyData(json) {
+					return json;
+				}
+				body = eval(body);
 				self.sendSocketNotification("DATA", body);
 			}
 		});
