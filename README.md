@@ -18,7 +18,7 @@ modules: [
 			header: 'RNV Haltestellenmonitor',
 			position:	'top_left',
 			config: {
-				stationID: 'ENTER YOUR STATION ID HERE',
+				stationIDs: 'ENTER YOUR STATION ID HERE', // for multiple, separate them with commas
 				departuresCount: 10
 			}
 		},
