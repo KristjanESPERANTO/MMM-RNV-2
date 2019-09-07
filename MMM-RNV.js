@@ -23,7 +23,7 @@ Module.register('MMM-RNV',{
 		retryDelay: 2500,
 		apiBase: 'https://rnv.tafmobile.de/easygo2/rest',
 		requestURL: '/regions/rnv/modules/stationmonitor/element',
-		stationID: '',
+		stationIDs: '',
 		
 		iconTable: {
 			"KOM": "fa fa-bus",
@@ -49,14 +49,8 @@ Module.register('MMM-RNV',{
 	getDom: function() {
 		var wrapper = document.createElement("div");
 
-		if (this.config.apiKey === "") {
-			wrapper.innerHTML = "No RNV <i>apiKey</i> set in config file.";
-			wrapper.className = "dimmed light small";
-			return wrapper;
-		}
-
-		if (this.config.stationID === "") {
-			wrapper.innerHTML = "No RNV <i>stationID</i> set in config file.";
+		if (this.config.stationIDs === "") {
+			wrapper.innerHTML = "No RNV <i>stationIDs</i> set in config file.";
 			wrapper.className = "dimmed light small";
 			return wrapper;
 		}
@@ -65,95 +59,120 @@ Module.register('MMM-RNV',{
 			wrapper.innerHTML = this.translate('LOADING');
 			wrapper.className = "dimmed light small";
 			return wrapper;
-		}		
-		
-		if (!this.departures.length) {
-			wrapper.innerHTML = "No data";
-			wrapper.className = "dimmed light small";
-			return wrapper;
 		}
 		
-		var table = document.createElement("table");
-		table.id = "rnvtable";
-		table.className = "small thin light";
+		var stationIDs = this.config.stationIDs.split(",");
+		for(var j = 0; j < stationIDs.length; j++) {
+			if(j > 0) {
+				wrapper.appendChild(document.createElement("br"));
+			}
+			
+			var stationID = stationIDs[j];
+			
+			var stationHeader = document.createElement("header");
+			stationHeader.className = "module-header";
+			stationHeader.innerHTML = this.stationName[stationID];
+			wrapper.appendChild(stationHeader);
+			
+			if (!this.departures[stationID] || !this.departures[stationID].length) {
+				wrapper.insertAdjacentHTML('beforeend', '<span class="dimmed light small">No data</span><br />');
+				continue;
+			}
 		
-		var row = document.createElement("tr");
-
-		var timeHeader = document.createElement("th");
-		timeHeader.innerHTML = "Abfahrt";
-		timeHeader.className = "rnvheader";
-		row.appendChild(timeHeader);
-		var lineHeader = document.createElement("th");
-		lineHeader.innerHTML = "Linie";
-		lineHeader.className = "rnvheader";
-		lineHeader.colSpan = 2;
-		row.appendChild(lineHeader);
-		var destinationHeader = document.createElement("th");
-		destinationHeader.innerHTML = "Fahrtrichtung";
-		destinationHeader.className = "rnvheader";
-		row.appendChild(destinationHeader);		
-		table.appendChild(row);
-		
-		for (var i = 0; i < this.departures.length && i < this.config.departuresCount; i++) {
-			var currentDeparture = this.departures[i];
+			var table = document.createElement("table");
+			table.id = "rnvtable-" + stationID;
+			table.className = "small thin light";
+			
 			var row = document.createElement("tr");
+
+			var timeHeader = document.createElement("th");
+			timeHeader.innerHTML = "Abfahrt";
+			timeHeader.className = "rnvheader";
+			row.appendChild(timeHeader);
+			var lineHeader = document.createElement("th");
+			lineHeader.innerHTML = "Linie";
+			lineHeader.className = "rnvheader";
+			lineHeader.colSpan = 2;
+			row.appendChild(lineHeader);
+			var destinationHeader = document.createElement("th");
+			destinationHeader.innerHTML = "Fahrtrichtung";
+			destinationHeader.className = "rnvheader";
+			row.appendChild(destinationHeader);		
 			table.appendChild(row);
 			
-			var cellDeparture = document.createElement("td");
-			cellDeparture.innerHTML = currentDeparture.time;
-			cellDeparture.className = "timeinfo";
-			if (currentDeparture.delay > 0) {
-				var spanDelay = document.createElement("span");
-				spanDelay.innerHTML = ' +' + currentDeparture.delay;
-				spanDelay.className = "small delay";
-				cellDeparture.appendChild(spanDelay);
-			}
-			row.appendChild(cellDeparture);
+			for (var i = 0; i < this.departures[stationID].length && i < this.config.departuresCount; i++) {
+				var currentDeparture = this.departures[stationID][i];
+				var row = document.createElement("tr");
+				table.appendChild(row);
+				
+				var cellDeparture = document.createElement("td");
+				cellDeparture.innerHTML = currentDeparture.time;
+				cellDeparture.className = "timeinfo";
+				if (currentDeparture.delay > 0) {
+					var spanDelay = document.createElement("span");
+					spanDelay.innerHTML = ' +' + currentDeparture.delay;
+					spanDelay.className = "small delay";
+					cellDeparture.appendChild(spanDelay);
+				}
+				row.appendChild(cellDeparture);
 
-			var cellTransport = document.createElement("td");
-			cellTransport.className = "timeinfo";
-			var symbolTransportation = document.createElement("span");
-			symbolTransportation.className = this.config.iconTable[currentDeparture.transportation];
-			cellTransport.appendChild(symbolTransportation);
-			row.appendChild(cellTransport);
-			
-			var cellLine = document.createElement("td");
-			cellLine.innerHTML = currentDeparture.lineLabel;
-			cellLine.className = "lineinfo";
-			row.appendChild(cellLine);
-			
-			var cellDirection = document.createElement("td");
-			cellDirection.innerHTML = currentDeparture.direction;
-			cellDirection.className = "destinationinfo";
-			row.appendChild(cellDirection);			
-		}
-		wrapper.appendChild(table);
-			
-		if (this.ticker) {
-			var marqueeTicker = document.createElement("marquee");
-			marqueeTicker.innerHTML = this.ticker;
-			marqueeTicker.className = "small thin light";
-			marqueeTicker.width = document.getElementsByClassName("module MMM-RNV MMM-RNV")[0].offsetWidth;
-			wrapper.appendChild(marqueeTicker);
+				var cellTransport = document.createElement("td");
+				cellTransport.className = "timeinfo";
+				var symbolTransportation = document.createElement("span");
+				symbolTransportation.className = this.config.iconTable[currentDeparture.transportation];
+				cellTransport.appendChild(symbolTransportation);
+				row.appendChild(cellTransport);
+				
+				var cellLine = document.createElement("td");
+				cellLine.innerHTML = currentDeparture.lineLabel;
+				cellLine.className = "lineinfo";
+				row.appendChild(cellLine);
+				
+				var cellDirection = document.createElement("td");
+				cellDirection.innerHTML = currentDeparture.direction;
+				cellDirection.className = "destinationinfo";
+				row.appendChild(cellDirection);			
+			}
+			wrapper.appendChild(table);
+				
+			if (this.ticker[stationID]) {
+				var marqueeTicker = document.createElement("marquee");
+				marqueeTicker.innerHTML = this.ticker[stationID];
+				marqueeTicker.className = "small thin light";
+				marqueeTicker.width = document.getElementsByClassName("module MMM-RNV MMM-RNV")[0].offsetWidth;
+				wrapper.appendChild(marqueeTicker);
+			}
 		}
 
 		return wrapper;
 	},
 
 	processDepartures: function(data) {
+		var stationID = data.stationID;
+		
 		if (!data.listOfDepartures) {
 			return;
 		}
 		
-		this.departures = [];
-		this.ticker = data.ticker;
-
+		if(!this.departures) {
+			this.departures = {};
+		}
+		this.departures[stationID] = [];
+		if(!this.ticker) {
+			this.ticker = {};
+		}
+		this.ticker[stationID] = data.ticker;
+		if(!this.stationName) {
+			this.stationName = {};
+		}
+		this.stationName[stationID] = data.stationName;
+		
 		for (var i in data.listOfDepartures) {
 			var t = data.listOfDepartures[i];
 			if ((t.time).indexOf(' ') > 0) { // time contains a date because it is not today
 				t.time = (t.time).substring((t.time).indexOf(' ')+1, (t.time).length);
 			}
-			this.departures.push({
+			this.departures[stationID].push({
 				time: (t.time).substring(0,5),
 				delay: (((t.time).indexOf('+') > 0) ? (t.time).substring(6,(t.time).length) : 0),
 				lineLabel: t.lineLabel,
