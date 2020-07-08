@@ -10,15 +10,19 @@
     "magic mirror",
     "smart mirror",
     "RNV",
-    "module",
+    "module"
   ],
   "author": "Stefan Krause",
-  "contributors": "https://github.com/yawnsde/MMM-RNV/graphs/contributors",
+  "contributors": ["https://github.com/yawnsde/MMM-RNV/graphs/contributors"],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/yawnsde/MMM-RNV/issues"
   },
   "homepage": "https://github.com/yawnsde/MMM-RNV#readme",
   "dependencies": {
-    }
+    "fast-xml-parser": "^3.17.4",
+    "nimn-date-parser": "^1.0.0",
+    "nimn_schema_builder": "^2.0.0",
+    "nimnjs": "^2.2.0"
+  }
 }
