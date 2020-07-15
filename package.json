@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/yawnsde/MMM-RNV#readme",
   "dependencies": {
-    "fast-xml-parser": "^3.17.4"
+    
   }
 }

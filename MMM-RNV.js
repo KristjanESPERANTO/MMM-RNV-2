@@ -7,8 +7,7 @@
  * MIT Licensed.
  */
 
-Module.register('MMM-RNV',{
-	
+Module.register('MMM-RNV', {
 	defaults: {
 		apiKey: "",
 		units: config.units,
@@ -21,13 +20,15 @@ Module.register('MMM-RNV',{
 		initialLoadDelay: 0, // 0 seconds delay
 		departuresCount: 10,
 		retryDelay: 2500,
-		apiBase: 'https://rnv.tafmobile.de/easygo2/rest',
-		requestURL: '/regions/rnv/modules/stationmonitor/element',
+		apiBase: 'https://vrn.de/mngvrn/',
+		requestURL: 'XML_DM_REQUEST',
 		stationIDs: '',
 		
 		iconTable: {
 			"KOM": "fa fa-bus",
-			"STRAB": "fa fa-subway"
+			"STRAB": "fa fa-subway",
+			"Bus": "fa fa-bus",
+			"Straßenbahn": "fa fa-subway",
 		},
 	},
 	
@@ -61,22 +62,21 @@ Module.register('MMM-RNV',{
 			return wrapper;
 		}
 		
-		var stationIDs = this.config.stationIDs.split(",");
-		for(var j = 0; j < stationIDs.length; j++) {
-			if(j > 0) {
+		let self = this;
+		var stationCounter = 0;
+		Object.keys(this.departures).sort().forEach(stationID => {
+			if(stationCounter++ > 0) {
 				wrapper.appendChild(document.createElement("br"));
 			}
 			
-			var stationID = stationIDs[j];
-			
 			var stationHeader = document.createElement("header");
 			stationHeader.className = "module-header";
-			stationHeader.innerHTML = this.stationName[stationID];
+			stationHeader.innerHTML = self.stationName[stationID];
 			wrapper.appendChild(stationHeader);
 			
-			if (!this.departures[stationID] || !this.departures[stationID].length) {
+			if (!self.departures[stationID] || !self.departures[stationID].length) {
 				wrapper.insertAdjacentHTML('beforeend', '<span class="dimmed light small">No data</span><br />');
-				continue;
+				return;
 			}
 		
 			var table = document.createElement("table");
@@ -100,13 +100,21 @@ Module.register('MMM-RNV',{
 			row.appendChild(destinationHeader);		
 			table.appendChild(row);
 			
-			for (var i = 0; i < this.departures[stationID].length && i < this.config.departuresCount; i++) {
-				var currentDeparture = this.departures[stationID][i];
+			for (var i = 0; i < self.departures[stationID].length && i < self.config.departuresCount; i++) {
+				var currentDeparture = self.departures[stationID][i];
 				var row = document.createElement("tr");
 				table.appendChild(row);
 				
+				let myTime = { ... currentDeparture.time };
+				myTime.month -= 1; // js counts months from 0
+				let myMoment = moment(myTime);
+
 				var cellDeparture = document.createElement("td");
-				cellDeparture.innerHTML = currentDeparture.time;
+				if(myMoment.isSame(new Date(), 'day')) {
+					cellDeparture.innerHTML = myMoment.format('LT');
+				} else {
+					cellDeparture.innerHTML = myMoment.calendar();
+				}
 				cellDeparture.className = "timeinfo";
 				if (currentDeparture.delay > 0) {
 					var spanDelay = document.createElement("span");
@@ -119,7 +127,7 @@ Module.register('MMM-RNV',{
 				var cellTransport = document.createElement("td");
 				cellTransport.className = "timeinfo";
 				var symbolTransportation = document.createElement("span");
-				symbolTransportation.className = this.config.iconTable[currentDeparture.transportation];
+				symbolTransportation.className = self.config.iconTable[currentDeparture.transportation];
 				cellTransport.appendChild(symbolTransportation);
 				row.appendChild(cellTransport);
 				
@@ -135,22 +143,22 @@ Module.register('MMM-RNV',{
 			}
 			wrapper.appendChild(table);
 				
-			if (this.ticker[stationID]) {
+			if (self.ticker[stationID]) {
 				var marqueeTicker = document.createElement("marquee");
-				marqueeTicker.innerHTML = this.ticker[stationID];
+				marqueeTicker.innerHTML = self.ticker[stationID];
 				marqueeTicker.className = "small thin light";
 				marqueeTicker.width = document.getElementsByClassName("module MMM-RNV MMM-RNV")[0].offsetWidth;
 				wrapper.appendChild(marqueeTicker);
 			}
-		}
+		});
 
 		return wrapper;
 	},
 
 	processDepartures: function(data) {
-		var stationID = data.stationID;
+		var stationID = data.dm.input.input;
 		
-		if (!data.listOfDepartures) {
+		if (!data.departureList) {
 			return;
 		}
 		
@@ -161,25 +169,27 @@ Module.register('MMM-RNV',{
 		if(!this.ticker) {
 			this.ticker = {};
 		}
-		this.ticker[stationID] = data.ticker;
+		this.ticker[stationID] = data.dm.points.point.infos || '';
 		if(!this.stationName) {
 			this.stationName = {};
 		}
-		this.stationName[stationID] = data.stationName;
+		this.stationName[stationID] = data.dm.points.point.name;
 		
-		for (var i in data.listOfDepartures) {
-			var t = data.listOfDepartures[i];
-			if ((t.time).indexOf(' ') > 0) { // time contains a date because it is not today
-				t.time = (t.time).substring((t.time).indexOf(' ')+1, (t.time).length);
+		for (var i in data.departureList) {
+			var t = data.departureList[i];
+			var statusNote;
+			if(!!t.lineInfos && t.lineInfos.length > 0) {
+				statusNote = t.lineInfos.pop();
 			}
+			
 			this.departures[stationID].push({
-				time: (t.time).substring(0,5),
-				delay: (((t.time).indexOf('+') > 0) ? (t.time).substring(6,(t.time).length) : 0),
-				lineLabel: t.lineLabel,
-				direction: t.direction,
-				status: t.status,
-				statusNote: t.statusNote,
-				transportation: t.transportation,
+				time: t.dateTime,
+				delay: t.servingLine.delay,
+				lineLabel: t.servingLine.symbol,
+				direction: t.servingLine.direction,
+				countdown: t.countdown,
+				statusNote: statusNote,
+				transportation: t.servingLine.name,
 			});
 				
 		}

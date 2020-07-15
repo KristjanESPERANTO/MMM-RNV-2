@@ -10,10 +10,8 @@
 const NodeHelper = require('node_helper');
 var request = require('request');
 var moment = require('moment');
-var xmlp = require('fast-xml-parser');
 
 module.exports = NodeHelper.create({
-
 	start: function() {
 		this.started = false;
 		this.config = null;
@@ -23,27 +21,23 @@ module.exports = NodeHelper.create({
 	getData: function() {
 		var self = this;
 		
-		self.getStations();
-		
-		var currentDate = moment().format('D.MM.YYYY  H:m:s');
-		var thisTime = new Date().getTime();
 		var stationIDs = this.config.stationIDs.split(",");
 		
 		for(var i = 0; i < stationIDs.length; i++) {
-			var myUrl = this.config.apiBase + this.config.requestURL + '?hafasID=' + stationIDs[i] + '&time=' + encodeURIComponent(currentDate) + '&transportFilter=alle' + '&jQuery=1' + '&callback=giveMyData';
+			let stationID;
+			if(stationIDs[i].match(new RegExp(/^\d+$/))) {
+				stationID = "de:08222:" + stationIDs[i];
+			} else {
+				stationID = stationIDs[i];
+			}
+			var myUrl = this.config.apiBase + this.config.requestURL + '?coordOutputFormat=EPSG:4326&depType=stopEvents&includeCompleteStopSeq=1&limit=' + this.config.departuresCount + '&locationServerActive=1&mode=direct&outputFormat=json&type_dm=any&useOnlyStops=1&useRealtime=1&name_dm=' + stationID;
 			
 			request({
 				url: myUrl,
 				method: 'GET'
 			}, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
-					function giveMyData(json) {
-						return json;
-					}
-					
-					body = eval(body);
-					body.stationID = this.req.path.split("hafasID=")[1].split("&")[0];
-					body.stationName = self.getStationFromId(body.stationID);
+					body = JSON.parse(body);
 					
 					self.sendSocketNotification("DATA", body);
 				}
@@ -61,23 +55,5 @@ module.exports = NodeHelper.create({
 			self.getData();
 			self.started = true;
 		}
-	},
-	
-	getStations: function() {
-		var self = this;
-		request({
-			url: "https://opendata.rnv-online.de/sites/default/files/Haltestellen_16.xml",
-			method: 'GET'
-		}, function(error, response, body) {
-			let parsedData = xmlp.parse(body, {ignoreAttributes: false});
-			for(var i = 0; i < parsedData.stations.station.length; i++) {
-				let station = parsedData.stations.station[i];
-				self.stationNames[station['@_id']] = station['@_name'];
-			}
-		});
-	},
-	
-	getStationFromId: function(id) {
-		return this.stationNames[id];
 	}
 });
