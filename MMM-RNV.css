@@ -5,15 +5,22 @@
 .rnvheader {
 	text-align: left;
 }
+.rnvheader:nth-child(2) {
+	text-align: center;
+}
 
 .lineinfo {
 	text-align: right;
 	padding: 0px 5px 0px 5px;
+	width: 1px;
+	white-space: nowrap;
 }
 
 .timeinfo {
 	padding: 0px 5px 0px 5px;	
 	text-align: left;
+	width: 1px;
+	white-space: nowrap;
 }
 
 .destinationinfo {

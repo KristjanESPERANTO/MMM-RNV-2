@@ -113,7 +113,7 @@ Module.register('MMM-RNV', {
 				if(myMoment.isSame(new Date(), 'day')) {
 					cellDeparture.innerHTML = myMoment.format('LT');
 				} else {
-					cellDeparture.innerHTML = myMoment.calendar();
+					cellDeparture.innerHTML = myMoment.format('HH:mm');
 				}
 				cellDeparture.className = "timeinfo";
 				if (currentDeparture.delay > 0) {
