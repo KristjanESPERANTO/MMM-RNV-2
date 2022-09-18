@@ -8,8 +8,7 @@
  */
 
 const NodeHelper = require('node_helper');
-var request = require('request');
-var moment = require('moment');
+var axios = require('axios');
 
 module.exports = NodeHelper.create({
 	start: function() {
@@ -32,14 +31,9 @@ module.exports = NodeHelper.create({
 			}
 			var myUrl = this.config.apiBase + this.config.requestURL + '?coordOutputFormat=EPSG:4326&depType=stopEvents&includeCompleteStopSeq=1&limit=' + this.config.departuresCount + '&locationServerActive=1&mode=direct&outputFormat=json&type_dm=any&useOnlyStops=1&useRealtime=1&name_dm=' + stationID;
 			
-			request({
-				url: myUrl,
-				method: 'GET'
-			}, function (error, response, body) {
-				if (!error && response.statusCode == 200) {
-					body = JSON.parse(body);
-					
-					self.sendSocketNotification("DATA", body);
+			axios.get(myUrl).then(response => {
+				if (response.status == 200) {
+					self.sendSocketNotification("DATA", response.data);
 				}
 			});
 		}
